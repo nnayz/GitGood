@@ -1,9 +1,6 @@
-from github import Github
-import os 
 from models.repository import Repository
-
-def get_github_client():
-    return Github(os.getenv("GITHUB_TOKEN"))
+from database.db import get_session
+from github_api.client import get_github_client
 
 def format_url(url: str):
     if url.startswith("https://github.com/"):
@@ -24,3 +21,8 @@ def get_repository_by_url(url: str):
         author=str(repo.owner.login),
     )
     return repo_obj
+
+def add_repository_to_db(repo_obj: Repository):
+    with get_session() as session:
+        session.add(repo_obj)
+        session.commit()
