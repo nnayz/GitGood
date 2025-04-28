@@ -6,6 +6,9 @@ from models.repository import Repository, RepositoryResponse
 from models.commit import CommitResponse, Commit
 from database.db import run_sql_file
 from typing import List
+from models.chat import ChatRequest
+from filters.filters import extract_filters
+from models.filters import Filters
 
 app = FastAPI()
 
@@ -35,4 +38,45 @@ async def get_repository(repository_id: int, db: Session = Depends(get_db)):
 async def get_commits(repository_id: int, db: Session = Depends(get_db)):
     commits = db.query(Commit).filter(Commit.repository_id == repository_id).all()
     return commits
+
+@app.post('/repositories/{repository_id}/chat')
+async def chat(
+    request: ChatRequest,
+    user_id: str = Header(...),
+    db: Session = Depends(get_db)
+):
+    if request.message == "" or request.message is None:
+        return { "message": "Please provide a message" }
+    if request.repository_id is None:
+        return { "message": "Please provide a repository id" }
+    
+    repository = db.query(Repository).filter(Repository.id == request.repository_id).first()
+    if repository is None:
+        return { "message": "Repository not found" }
+    
+    commits = db.query(Commit).filter(Commit.repository_id == request.repository_id).all()
+    if len(commits) == 0:
+        return { "message": "No commits found" }
+    
+    filters = extract_filters(request.message, commits)
+    
+    # Apply filters to the commits query
+    query = db.query(Commit).filter(Commit.repository_id == request.repository_id)
+    
+    if filters.branch:
+        query = query.filter(Commit.branch_name == filters.branch)
+    if filters.author:
+        query = query.filter(Commit.author.ilike(f"%{filters.author}%"))
+    if filters.start_date:
+        query = query.filter(Commit.date >= filters.start_date)
+    if filters.end_date:
+        query = query.filter(Commit.date <= filters.end_date)
+    
+    filtered_commits = query.all()
+    
+    return {
+        "message": "Here are the commits matching your criteria",
+        "filters": filters.model_dump(),
+        "commits": [CommitResponse.model_validate(commit).model_dump() for commit in filtered_commits]
+    }
 
