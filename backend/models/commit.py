@@ -1,10 +1,11 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Text, DateTime, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
-
-Base = declarative_base()
+from database.base import Base
+from typing import List
+from pydantic import BaseModel
+from datetime import datetime
 
 class Commit(Base):
     __tablename__ = "commits"
@@ -25,3 +26,20 @@ class Commit(Base):
 
     def __repr__(self):
         return f"<Commit(sha={self.sha}, message={self.message}, author={self.author}, date={self.date})>"
+
+class CommitResponse(BaseModel):
+    sha: str
+    repository_id: int
+    branch_name: str
+    message: str | None
+    added_at: datetime
+    created_at: datetime
+    author: str
+    date: datetime
+    files_changed: List[str] | None
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }

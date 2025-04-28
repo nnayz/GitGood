@@ -67,3 +67,11 @@ def get_session():
     finally:
         session.close()
 
+# FastAPI dependency for database sessions
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+

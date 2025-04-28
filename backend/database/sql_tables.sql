@@ -22,7 +22,6 @@ COMMENT ON TABLE repositories IS 'Stores information about the GitHub repositori
 CREATE TABLE IF NOT EXISTS commits (
     sha VARCHAR(40) PRIMARY KEY,
     repository_id INTEGER NOT NULL,
-    commit_hash VARCHAR(255) NOT NULL,
     branch_name VARCHAR(255) NOT NULL,
     message TEXT,
     added_at TIMESTAMPTZ DEFAULT NOW(),

@@ -1,9 +1,10 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
-
-Base = declarative_base()
+from database.base import Base
+from typing import List
+from pydantic import BaseModel
+from datetime import datetime
 
 class Repository(Base):
     __tablename__ = "repositories"
@@ -24,4 +25,21 @@ class Repository(Base):
 
     def __repr__(self):
         return f"<Repository(id={self.id}, name={self.name}, url={self.url})>"
+
+class RepositoryResponse(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    language: str | None
+    created_at: datetime
+    updated_at: datetime
+    added_at: datetime
+    url: str
+    author: str
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
     
