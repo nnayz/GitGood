@@ -8,7 +8,13 @@ from database.db import run_sql_file
 from typing import List
 from models.chat import ChatRequest
 from filters.filters import extract_filters
-from models.filters import Filters
+from embeddings.embed_text import embed_text
+import numpy as np
+from llm_client.client import get_client
+from github_api.client import get_github_client
+
+def cosine(a: np.ndarray, b: np.ndarray) -> float:
+    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
 
 app = FastAPI()
 
@@ -58,7 +64,7 @@ async def chat(
     if len(commits) == 0:
         return { "message": "No commits found" }
     
-    filters = extract_filters(request.message, commits)
+    filters = extract_filters(request.message, db, request.repository_id)
     
     # Apply filters to the commits query
     query = db.query(Commit).filter(Commit.repository_id == request.repository_id)
@@ -73,10 +79,75 @@ async def chat(
         query = query.filter(Commit.date <= filters.end_date)
     
     filtered_commits = query.all()
+
+    # Embed the user query
+    user_query_embedding = embed_text(request.message)
+
+    # Using cosine similarity find similarities between the user query and the commits
+    scores = []
+    for commit in filtered_commits:
+        score = cosine(user_query_embedding, commit.embedding)
+        scores.append((commit, score))
     
+    # Sort the commits by score
+    scores.sort(key=lambda x: x[1], reverse=True)
+    mean_score = np.mean([score for _, score in scores])
+    std_score = np.std([score for _, score in scores])
+
+    # Define a threshold for the score
+    threshold = mean_score + 2 * std_score
+    filtered_commits = [commit for commit, score in scores if score >= threshold]
+
+    if not filtered_commits:
+        threshold = mean_score
+        filtered_commits = [commit for commit, score in scores if score >= threshold]
+        
+        if not filtered_commits:
+            filtered_commits = scores[:3]
+
+    github_client = get_github_client()
+    repo = github_client.get_repo(repository.url.split("https://github.com/")[1])
+
+    commits_as_context = []
+    for commit in filtered_commits:
+        commit_details = repo.get_commit(commit.sha)
+        file_contexts = []
+        for file in commit_details.files:
+            file_contexts.append(
+                f"Commit file change: {file.filename}\n"
+                f"Patch: {file.patch}\n"
+                f"Status: {file.status}\n"
+                f"Additions: {file.additions}\n"
+                f"Deletions: {file.deletions}\n"
+                f"Changes: {file.changes}\n"
+            )
+        file_context_str = "\n".join(file_contexts)
+        commits_as_context.append(
+            f"Commit sha: {commit_details.sha}\n"
+            f"Commit message: {commit_details.commit.message}\n"
+            f"Commit author: {commit_details.author.login}\n"
+            f"Commit date: {commit_details.commit.author.date}\n"
+            f"{file_context_str}\n"
+        )
+
+    commits_as_context = "\n".join(commits_as_context)
+    llm_client = get_client()
+    llm_prompt = f"""
+    Your are a helpful assistant that can answer questions about the commits. The user asked: {request.message}
+    Here are the most relevant commits:
+    {commits_as_context}
+    Based on these commits and the user query, answer the user's question.
+    """
+    response = llm_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": llm_prompt}],
+    )
+
+    response_message = response.choices[0].message.content
     return {
-        "message": "Here are the commits matching your criteria",
+        "message": response_message,
         "filters": filters.model_dump(),
-        "commits": [CommitResponse.model_validate(commit).model_dump() for commit in filtered_commits]
+        "commits": [CommitResponse.model_validate(commit).model_dump() for commit in filtered_commits],
+        "commits_as_context": commits_as_context
     }
 

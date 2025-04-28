@@ -1,7 +1,6 @@
-from openai import OpenAI
-import os
+from llm_client.client import get_client
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = get_client()
 
 MODEL = "text-embedding-3-small"
 DIMS = 1536
