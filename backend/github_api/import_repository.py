@@ -28,7 +28,7 @@ def get_repository_by_url(url: str):
     )
     
     # Generate embedding for the repository
-    repo_obj = embed_repository(repo_obj)
+    # repo_obj = embed_repository(repo_obj) # Not embedding for now
     return repo_obj
 
 def add_repository_to_db(repo_obj: Repository):

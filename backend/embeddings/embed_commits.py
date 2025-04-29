@@ -21,19 +21,6 @@ def embed_commits(commits):
         Changes:
         """
         
-        # Add patch information for each file
-        for file in commit.get('files', []):
-            if hasattr(file, 'patch') and file.patch:
-                embedding_text += f"""
-                File: {file.filename}
-                Patch:
-                {file.patch}
-                Status: {file.status}
-                Additions: {file.additions}
-                Deletions: {file.deletions}
-                Changes: {file.changes}
-                """
-        
         # Get embedding from OpenAI
         response = client.embeddings.create(
             model=MODEL,

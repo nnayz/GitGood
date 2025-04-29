@@ -91,6 +91,8 @@ async def chat(
     
     # Sort the commits by score
     scores.sort(key=lambda x: x[1], reverse=True)
+    for score in scores:
+        print(score[1])
     mean_score = np.mean([score for _, score in scores])
     std_score = np.std([score for _, score in scores])
 
@@ -125,7 +127,8 @@ async def chat(
         commits_as_context.append(
             f"Commit sha: {commit_details.sha}\n"
             f"Commit message: {commit_details.commit.message}\n"
-            f"Commit author: {commit_details.author.login}\n"
+            f"Commit author: {commit_details.author.name}\n"
+            f"Commit author username: {commit_details.author.login}\n"
             f"Commit date: {commit_details.commit.author.date}\n"
             f"{file_context_str}\n"
         )
@@ -139,7 +142,7 @@ async def chat(
     Based on these commits and the user query, answer the user's question.
     """
     response = llm_client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[{"role": "user", "content": llm_prompt}],
     )
 
@@ -148,6 +151,5 @@ async def chat(
         "message": response_message,
         "filters": filters.model_dump(),
         "commits": [CommitResponse.model_validate(commit).model_dump() for commit in filtered_commits],
-        "commits_as_context": commits_as_context
     }
 
