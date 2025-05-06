@@ -1,4 +1,7 @@
-from fastapi import FastAPI, Header, Depends
+from fastapi import FastAPI, Header, Depends, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+import requests
+import os
 from database.db import get_db
 from sqlalchemy.orm import Session
 from github_api.import_repository import get_repository_by_url, add_repository_to_db
@@ -12,13 +15,73 @@ from embeddings.embed_text import embed_text
 import numpy as np
 from llm_client.client import get_client
 from github_api.client import get_github_client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def cosine(a: np.ndarray, b: np.ndarray) -> float:
     return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 run_sql_file("database/sql_tables.sql")
+
+@app.post('/auth/github/callback')
+async def github_callback(request: Request):
+    data = await request.json()
+    code = data.get('code')
+    
+    # Exchange code for token
+    token_url = 'https://github.com/login/oauth/access_token'
+    response = requests.post(
+        token_url,
+        headers={'Accept': 'application/json'},
+        data={
+            'client_id': os.getenv('GITHUB_CLIENT_ID'),
+            'client_secret': os.getenv('GITHUB_CLIENT_SECRET'),
+            'code': code
+        }
+    )
+    
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to obtain access token")
+        
+    token_data = response.json()
+    access_token = token_data.get('access_token')
+    
+    # Get user info
+    user_response = requests.get(
+        'https://api.github.com/user',
+        headers={
+            'Authorization': f'token {access_token}',
+            'Accept': 'application/json'
+        }
+    )
+    
+    if user_response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to get user info")
+        
+    user_data = user_response.json()
+    
+    # Return the token and user info
+    return {
+        "token": access_token,
+        "user": {
+            "id": user_data.get('id'),
+            "login": user_data.get('login'),
+            "name": user_data.get('name'),
+            "avatar_url": user_data.get('avatar_url')
+        }
+    }
+
 
 @app.get("/")
 async def root():

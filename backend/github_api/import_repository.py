@@ -1,7 +1,6 @@
 from models.repository import Repository
 from database.db import get_session
 from github_api.client import get_github_client
-from embeddings.embed_repository import embed_repository
 from github_api.populate_commits import populate_commits
 from sqlalchemy.exc import IntegrityError
 
