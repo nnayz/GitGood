@@ -1,6 +1,5 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { isAuthenticated } from '../../services/auth/github';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -8,6 +7,8 @@ interface AuthGuardProps {
 
 const AuthGuard = ({ children }: AuthGuardProps) => {
   const navigate = useNavigate();
+  
+  const isAuthenticated = () => !!localStorage.getItem('auth_token');
   
   useEffect(() => {
     if (!isAuthenticated()) {

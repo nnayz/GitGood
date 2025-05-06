@@ -8,7 +8,7 @@ from github_api.import_repository import get_repository_by_url, add_repository_t
 from models.repository import Repository, RepositoryResponse
 from models.commit import CommitResponse, Commit
 from database.db import run_sql_file
-from typing import List
+from typing import List, Optional
 from models.chat import ChatRequest
 from filters.filters import extract_filters
 from embeddings.embed_text import embed_text
@@ -38,6 +38,9 @@ run_sql_file("database/sql_tables.sql")
 async def github_callback(request: Request):
     data = await request.json()
     code = data.get('code')
+
+    if not code:
+        raise HTTPException(status_code=400, detail="No code provided")
     
     # Exchange code for token
     token_url = 'https://github.com/login/oauth/access_token'
@@ -82,6 +85,41 @@ async def github_callback(request: Request):
         }
     }
 
+@app.get('/auth/verify')
+async def verify_auth(authorization: Optional[str] = Header(None)):
+    """
+    Verify if the provided GitHub token is valid and return user data.
+    This endpoint can be used to check authentication status.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No authorization token provided")
+    
+    # Extract token from Authorization header
+    token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
+    
+    # Verify the token with GitHub API
+    user_response = requests.get(
+        'https://api.github.com/user',
+        headers={
+            'Authorization': f'token {token}',
+            'Accept': 'application/json'
+        }
+    )
+    
+    if user_response.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    user_data = user_response.json()
+    
+    return {
+        "authenticated": True,
+        "user": {
+            "id": user_data.get('id'),
+            "login": user_data.get('login'),
+            "name": user_data.get('name'),
+            "avatar_url": user_data.get('avatar_url')
+        }
+    }
 
 @app.get("/")
 async def root():
