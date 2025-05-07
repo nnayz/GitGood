@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
 import { getUserData, logout } from '../services/auth/github';
 
+interface User {
+  id: number;
+  login: string;
+  name: string;
+  avatar_url: string;
+}
+
 const Home = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const userData = getUserData();
