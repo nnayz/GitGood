@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import GithubCallback from './components/Auth/GithubCallback';
 import AuthGuard from './components/Auth/AuthGuard';
 import Login from './pages/Login';
-import Home from './pages/Home';
+import Home from './pages/Dashboard';
 import axios from 'axios';
 import './App.css';
 
