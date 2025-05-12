@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { repositoriesApi } from "@/services/repositoriesApi";
 
 export const useRepositoriesQueries = () => {
@@ -10,5 +10,31 @@ export const useRepositoriesQueries = () => {
         refetchOnMount: false,
         refetchOnReconnect: false,
         refetchInterval: 1000 * 60 * 5,
+    });
+}
+
+export const useAddRepository = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (repositoryUrl: string) => repositoriesApi.addRepository(repositoryUrl),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['repositories'] });  
+        },
+        onError: (error) => {
+            console.error(error);
+        },
+    });
+}
+
+export const useDeleteRepository = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (repositoryId: number) => repositoriesApi.deleteRepository(repositoryId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['repositories'] });
+        },
+        onError: (error) => {
+            console.error(error);
+        },
     });
 }

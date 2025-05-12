@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from database.base import Base
@@ -15,13 +15,15 @@ class Repository(Base):
     language = Column(String(255))
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
-    added_at = Column(DateTime(timezone=True), server_default='now()')
+    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     url = Column(String(255), nullable=False)
     author = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     embedding = Column(Vector(1536))  # Using pgvector's Vector type with dimension 1536
 
     # Relationship
     commits = relationship("Commit", back_populates="repository", cascade="all, delete-orphan")
+    user = relationship("User", back_populates="repositories")
 
     def __repr__(self):
         return f"<Repository(id={self.id}, name={self.name}, url={self.url})>"

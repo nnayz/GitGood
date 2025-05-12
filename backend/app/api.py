@@ -16,7 +16,9 @@ import numpy as np
 from llm_client.client import get_client
 from github_api.client import get_github_client
 from dotenv import load_dotenv
-
+from models.user import User
+from app.auth import get_current_user
+from request_models.ImportRepoRequest import ImportRepoRequest
 load_dotenv()
 
 def cosine(a: np.ndarray, b: np.ndarray) -> float:
@@ -126,40 +128,86 @@ async def root():
     return {"message": "Hello World"}
 
 @app.post("/import-repo")
-async def import_repo(user_id: str = Header(...), repo_url: str = Header(...), db: Session = Depends(get_db)):
-    repository_obj = get_repository_by_url(repo_url)
+async def import_repo(
+    request: ImportRepoRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    repository_obj = get_repository_by_url(request.url)
+    repository_obj.user_id = current_user.id  # Associate with current user
     add_repository_to_db(repository_obj)
-    return { "message": "Repository imported successfully" }
+    return {"message": "Repository imported successfully"}
+
+@app.delete('/repositories/{repository_id}')
+async def delete_repository(
+    repository_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    repository = db.query(Repository).filter(Repository.id == repository_id, Repository.user_id == current_user.id).first()
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    db.delete(repository)
+    db.commit()
+    return {"message": "Repository deleted successfully"}
 
 @app.get('/getAllRepositories', response_model=List[RepositoryResponse])
-async def get_all_repositories(db: Session = Depends(get_db)):
-    repositories = db.query(Repository).all()
+async def get_all_repositories(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    repositories = db.query(Repository).filter(Repository.user_id == current_user.id).all()
     return repositories
 
 @app.get('/repositories/{repository_id}', response_model=RepositoryResponse)
-async def get_repository(repository_id: int, db: Session = Depends(get_db)):
-    repository = db.query(Repository).filter(Repository.id == repository_id).first()
+async def get_repository(
+    repository_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    repository = db.query(Repository).filter(
+        Repository.id == repository_id,
+        Repository.user_id == current_user.id
+    ).first()
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
     return repository
 
 @app.get('/repositories/{repository_id}/commits', response_model=List[CommitResponse])
-async def get_commits(repository_id: int, db: Session = Depends(get_db)):
+async def get_commits(
+    repository_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # First verify the repository belongs to the user
+    repository = db.query(Repository).filter(
+        Repository.id == repository_id,
+        Repository.user_id == current_user.id
+    ).first()
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+        
     commits = db.query(Commit).filter(Commit.repository_id == repository_id).all()
     return commits
 
 @app.post('/repositories/{repository_id}/chat')
 async def chat(
     request: ChatRequest,
-    user_id: str = Header(...),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    # First verify the repository belongs to the user
+    repository = db.query(Repository).filter(
+        Repository.id == request.repository_id,
+        Repository.user_id == current_user.id
+    ).first()
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
     if request.message == "" or request.message is None:
         return { "message": "Please provide a message" }
     if request.repository_id is None:
         return { "message": "Please provide a repository id" }
-    
-    repository = db.query(Repository).filter(Repository.id == request.repository_id).first()
-    if repository is None:
-        return { "message": "Repository not found" }
     
     commits = db.query(Commit).filter(Commit.repository_id == request.repository_id).all()
     if len(commits) == 0:

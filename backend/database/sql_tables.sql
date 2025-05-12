@@ -1,6 +1,16 @@
 -- Enable vector extension for embeddings
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    github_id INTEGER UNIQUE NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255),
+    avatar_url VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create repositories table
 CREATE TABLE IF NOT EXISTS repositories (
     id INTEGER PRIMARY KEY,
@@ -12,10 +22,15 @@ CREATE TABLE IF NOT EXISTS repositories (
     added_at TIMESTAMPTZ DEFAULT NOW(),
     url VARCHAR(255) NOT NULL,
     author VARCHAR(255) NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     embedding VECTOR(1536)
 );
 
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_repositories_id ON repositories (id);
+CREATE INDEX IF NOT EXISTS idx_repositories_user_id ON repositories (user_id);
+CREATE INDEX IF NOT EXISTS idx_repositories_embedding ON repositories USING HNSW (embedding vector_cosine_ops);
+
 COMMENT ON TABLE repositories IS 'Stores information about the GitHub repositories being tracked by GitSum.';
 
 -- Create commits table
@@ -25,7 +40,7 @@ CREATE TABLE IF NOT EXISTS commits (
     branch_name VARCHAR(255) NOT NULL,
     message TEXT,
     added_at TIMESTAMPTZ DEFAULT NOW(),
-    created_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMP NOT NULL,
     author VARCHAR(255) NOT NULL,
     date TIMESTAMP NOT NULL,
     files_changed TEXT[],

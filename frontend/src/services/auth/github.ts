@@ -1,4 +1,5 @@
 import axios from "axios";
+import { User } from "@/models/user";
 
 // Define environment variables with clear fallbacks
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -22,8 +23,9 @@ export const handleGithubCallback = async (code: string) => {
     }
     
     try {
-        // Exchange the code for an access token
         const response = await axios.post(`${API_URL}/auth/github/callback`, { code });
+        // Store user data in localStorage
+        localStorage.setItem('user_data', JSON.stringify(response.data.user as User | null));
         return response.data;
     } catch (error) {
         console.error("Github auth error", error);
@@ -45,7 +47,7 @@ export const verifyAuth = async () => {
     try {
         const response = await axios.get(`${API_URL}/auth/verify`, {
             headers: {
-                'Authorization': token
+                'Authorization': `Bearer ${token}`
             }
         });
         return response.data.authenticated;
@@ -65,7 +67,7 @@ export const getToken = () => {
 
 export const getUserData = () => {
     const userData = localStorage.getItem("user_data");
-    return userData ? JSON.parse(userData) : null;
+    return userData ? JSON.parse(userData) as User : null;
 }
 
 export const logout = () => {
