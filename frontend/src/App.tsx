@@ -20,19 +20,21 @@ function AppRoutes() {
   const { isAuthenticated } = useAuth();
   
   return (
-    <Routes>
-      <Route path="/" element={
-        isAuthenticated ? 
-          <ProtectedRoute><Dashboard /></ProtectedRoute> : 
-          <Navigate to="/login" replace />
-      } />
-      <Route path="/login" element={
-        !isAuthenticated ? 
-          <Login /> : 
-          <Navigate to="/" replace />
-      } />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={
+          isAuthenticated ? 
+            <ProtectedRoute><Dashboard /></ProtectedRoute> : 
+            <Navigate to="/login" replace />
+        } />
+        <Route path="/login" element={
+          !isAuthenticated ? 
+            <Login /> : 
+            <Navigate to="/" replace />
+        } />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+      </Routes>
+    </>
   );
 }
 
