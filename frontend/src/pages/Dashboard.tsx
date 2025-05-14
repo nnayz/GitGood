@@ -7,8 +7,10 @@ const Dashboard: React.FC = () => {
     <CustomLayout>
       <div className="flex flex-col h-full overflow-auto">
         <NavigationBar />
-        <div className="flex-1 p-4">
-          <ChatInterface />
+        <div className="flex-1 p-4 flex justify-center">
+          <div className="w-2xl">
+            <ChatInterface />
+          </div>
         </div>
       </div>
     </CustomLayout>

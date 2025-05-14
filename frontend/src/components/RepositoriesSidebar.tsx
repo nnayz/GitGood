@@ -1,6 +1,6 @@
 import React from 'react';
 import { TypographyH2, TypographyH3, TypographySmall } from '@/components/ui/Typography';
-import { ArrowLeftIcon, PlusIcon, TrashIcon } from '@radix-ui/react-icons';
+import { PlusIcon, TrashIcon } from '@radix-ui/react-icons';
 import { Repository } from '@/models/repository';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { useRepositoriesQueries, useAddRepository, useDeleteRepository } from '@/hooks/useRepositoriesQueries';
@@ -56,7 +56,6 @@ const RepositoriesSidebar: React.FC<RepositoriesSidebarProps> = ({ onRepositoryS
         <div className="w-72 border-r border-border flex flex-col h-full bg-background">
           <div className="flex items-center justify-between border-b border-border p-2">
             <TypographyH2 title="GitSum" />
-            <ArrowLeftIcon className="w-4 h-4 cursor-pointer" />
           </div>
           
           <div className="flex-1 flex flex-col overflow-auto p-2">

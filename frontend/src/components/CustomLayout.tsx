@@ -25,7 +25,7 @@ export function CustomLayout({ children }: CustomLayoutProps) {
       />
       
       {/* Main content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto w-[calc(100%-288px)]">
         {children}
       </div>
       
