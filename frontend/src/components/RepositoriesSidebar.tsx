@@ -84,7 +84,6 @@ const RepositoriesSidebar: React.FC<RepositoriesSidebarProps> = ({ onRepositoryS
                     <HoverCardContent side="right" sideOffset={8} className="w-72 p-4 bg-card text-card-foreground border border-border rounded-lg shadow-lg">
                       <div className="flex items-center justify-between">
                         <div className="font-semibold text-foreground mb-1 truncate" title={repository.name}>{repository.name}</div>
-                        <div>{repository.id}</div>
                         {isDeletingRepository ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrashIcon className="w-4 h-4 text-destructive hover:text-destructive/80" onClick={() => handleDeleteRepository(repository.id)} />}
                       </div>
                       <div className="text-xs text-muted-foreground mb-2 truncate" title={repository.description}>{repository.description}</div>

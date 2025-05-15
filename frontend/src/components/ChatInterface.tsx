@@ -22,7 +22,7 @@ interface UserMessageProps {
 const AssistantMessage: React.FC<AssistantMessageProps> = ({ message }) => {
   return (
     <div className="flex justify-start">
-      <div className="bg-inherit text-foreground p-2 max-w-[80%]">
+      <div className="bg-inherit text-foreground p-2 max-w-[80%] text-left">
         <TypographySmall text={message.content} />
       </div>
     </div>
@@ -33,7 +33,7 @@ const AssistantMessage: React.FC<AssistantMessageProps> = ({ message }) => {
 const UserMessage: React.FC<UserMessageProps> = ({ message }) => {
   return (
     <div className="flex justify-end">
-      <div className="bg-muted text-primary-foreground dark:text-foreground p-2 pb-1 px-4 rounded-xl max-w-[80%]">
+      <div className="bg-muted text-primary-foreground dark:text-foreground p-2 pb-1 px-4 rounded-xl max-w-[80%] text-left">
         <TypographySmall text={message.content} />
       </div>
     </div>
@@ -107,7 +107,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ repositoryId }) => {
 
       {/* Conversation History */}
       <div className="flex flex-col justify-end overflow-auto p-0 ">
-        <div className="flex flex-col justify-between">
+        <div className="flex flex-col justify-between p-5">
           {messages.map((message) => (
             message.role === 'assistant' ? (
               <AssistantMessage key={message.id} message={message} />
