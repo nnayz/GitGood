@@ -2,6 +2,10 @@ import psycopg2
 from sqlalchemy import create_engine as create_engine_sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 def connect_to_db():
@@ -10,10 +14,10 @@ def connect_to_db():
     """
     try:
         conn = psycopg2.connect(
-            host="localhost",
-            database="gitsum",
-            user="nayz",
-            port="5432"
+            host=os.getenv("PGHOST"),
+            database=os.getenv("PGDATABASE"),
+            user=os.getenv("PGUSER"),
+            port=os.getenv("PGPORT")
         )
         return conn
     except Exception as e:
@@ -44,7 +48,7 @@ def create_engine():
     """
     Create an SQLAlchemy engine to connect to the database.
     """
-    engine = create_engine_sqlalchemy("postgresql://nayz@localhost:5432/gitsum")
+    engine = create_engine_sqlalchemy(os.getenv("PGURL"))
     return engine
 
 engine = create_engine()
