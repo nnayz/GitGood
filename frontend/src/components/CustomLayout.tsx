@@ -1,26 +1,25 @@
-import React, { useState } from 'react';
-import { useCommitsQueries } from '@/hooks/useCommitsQueries';
+import React from 'react';
 import RepositoriesSidebar from '@/components/RepositoriesSidebar';
 import CommitsSidebar from '@/components/CommitsSidebar';
+import { Commit } from '@/models/commit';
 
 interface CustomLayoutProps {
   children?: React.ReactNode;
+  selectedRepositoryId: number;
+  commits: Commit[];
+  isLoadingCommits: boolean;
+  expandedCommitSha: string | null;
+  setExpandedCommitSha: (sha: string | null) => void;
+  onRepositorySelect: (repositoryId: number) => void;
 }
 
-export function CustomLayout({ children }: CustomLayoutProps) {
-  const [selectedRepositoryId, setSelectedRepositoryId] = useState<number | null>(null);
-  const { data: commits, isLoading: isLoadingCommits } = useCommitsQueries(selectedRepositoryId ?? 0);
-  const [expandedCommitSha, setExpandedCommitSha] = useState<string | null>(null);
-
-  const handleSelectRepository = (repositoryId: number) => {
-    setSelectedRepositoryId(repositoryId);
-  }
+export function CustomLayout({ children, selectedRepositoryId, commits, isLoadingCommits, expandedCommitSha, setExpandedCommitSha, onRepositorySelect }: CustomLayoutProps) {
 
   return (
     <div className="flex h-screen">
       {/* Left sidebar */}
       <RepositoriesSidebar 
-        onRepositorySelect={handleSelectRepository} 
+        onRepositorySelect={onRepositorySelect} 
         selectedRepositoryId={selectedRepositoryId ?? 0} 
       />
       

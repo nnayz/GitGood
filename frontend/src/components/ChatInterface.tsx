@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { TypographyP } from './ui/Typography';
+import { TypographySmall } from './ui/Typography';
 import { Textarea } from './ui/textarea';
 import { SendIcon } from 'lucide-react';
+import { useSendChat } from '@/hooks/useSendChat';
 
 interface Message {
   id: string;
@@ -9,13 +10,47 @@ interface Message {
   role: 'user' | 'assistant';
 }
 
+interface AssistantMessageProps {
+  message: Message;
+}
 
-const ChatInterface: React.FC = () => {
+interface UserMessageProps {
+  message: Message;
+}
+
+
+const AssistantMessage: React.FC<AssistantMessageProps> = ({ message }) => {
+  return (
+    <div className="flex justify-start">
+      <div className="bg-inherit text-foreground p-2 max-w-[80%]">
+        <TypographySmall text={message.content} />
+      </div>
+    </div>
+  );
+};
+
+
+const UserMessage: React.FC<UserMessageProps> = ({ message }) => {
+  return (
+    <div className="flex justify-end">
+      <div className="bg-muted text-primary-foreground dark:text-foreground p-2 pb-1 px-4 rounded-xl max-w-[80%]">
+        <TypographySmall text={message.content} />
+      </div>
+    </div>
+  );
+};
+
+interface ChatInterfaceProps {
+  repositoryId: number;
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ repositoryId }) => {
+  const { mutate: sendChat, isPending } = useSendChat();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       content: 'Hello, how are you?',
-      role: 'user',
+      role: 'assistant',
     },
   ]);
 
@@ -25,29 +60,44 @@ const ChatInterface: React.FC = () => {
     if(!input.trim()) return;
 
     // Add user message to the conversation
-    const newMessage: Message = {
-      id: new Date().toISOString(),
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
       content: input,
       role: 'user',
     };
 
     // Update the messages state
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
 
-    // Clear the input field
+    const messageToSend = input;
+
     setInput('');
 
-    // Simulate an assistant response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: new Date().toISOString(),
-        content: 'Analyzing repository data...',
-        role: 'assistant',
-      };
+    sendChat(
+      { repositoryId, message: messageToSend },
+      {
+        onSuccess: (data) => {
+          const assistantMessage: Message = {
+            id: `assistant-${Date.now()}`,
+            content: data.message,
+            role: 'assistant',
+          };
+          setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+        },
+        onError: (error) => {
+          const errorMessage: Message = {
+            id: `error-${Date.now()}`,
+            content: "Sorry, I couldn't process your request. Please try again.",
+            role: 'assistant',
+          };
+          setMessages((prevMessages) => [...prevMessages, errorMessage]);
+          console.error(error);
+        }
+      }
+    );
 
-      // Update the messages state with the assistant response
-      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-    }, 1000);
+
+
   };
 
 
@@ -56,23 +106,14 @@ const ChatInterface: React.FC = () => {
       
 
       {/* Conversation History */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="space-y-4">
+      <div className="flex flex-col justify-end overflow-auto p-0 ">
+        <div className="flex flex-col justify-between">
           {messages.map((message) => (
-            <div 
-              key={message.id} 
-              className={`${message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}
-            >
-              <div 
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  message.role === 'user' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-foreground'
-                }`}
-              >
-                <TypographyP text={message.content} />
-              </div>
-            </div>
+            message.role === 'assistant' ? (
+              <AssistantMessage key={message.id} message={message} />
+            ) : (
+              <UserMessage key={message.id} message={message} />
+            )
           ))}
         </div>
       </div>
@@ -82,6 +123,7 @@ const ChatInterface: React.FC = () => {
         <div className="relative w-full rounded-4xl border overflow-hidden bg-background">
           <Textarea 
             value={input}
+            placeholder="Type your message here..."
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if(e.key === 'Enter' && !e.shiftKey) {
@@ -92,7 +134,8 @@ const ChatInterface: React.FC = () => {
             className='border-none p-4 pr-10 resize-none bg-transparent w-full max-h-70' />
           <button 
             onClick={handleSendMessage}
-            className="absolute right-2 bottom-3 w-6 h-6 flex items-center justify-center !rounded-full !border-0 !p-0 !bg-primary hover:!bg-primary/90 text-primary-foreground"
+            disabled={isPending}
+            className="absolute right-2 bottom-3 w-6 h-6 flex items-center justify-center !rounded-full !border-0 !p-0 !bg-white hover:!bg-primary/90 text-primary-foreground"
           >
             <SendIcon className="w-3 h-3 text-black" />
           </button>
