@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY} # 1
+      - GITHUB_TOKEN=${GITHUB_TOKEN} # 2
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID} # 3
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET} # 4
+      - POSTGRES_HOST=${POSTGRES_HOST} # 5
+      - POSTGRES_USER=${POSTGRES_USER} # 6
+      - POSTGRES_PORT=${POSTGRES_PORT} # 7
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD} # 8
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE} # 9
+      - DATABASE_URL=${DATABASE_URL} # 10
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../frontend/Dockerfile
+    ports:
+      - "4173:4173"
+    environment:
+      - VITE_API_URL=${VITE_API_URL} # 11
+      - VITE_GITHUB_CLIENT_ID=${VITE_GITHUB_CLIENT_ID} # 12
+      - VITE_GITHUB_CLIENT_SECRET=${VITE_GITHUB_CLIENT_SECRET} # 13
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
