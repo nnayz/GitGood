@@ -14,10 +14,11 @@ def connect_to_db():
     """
     try:
         conn = psycopg2.connect(
-            host=os.getenv("PGHOST"),
-            database=os.getenv("PGDATABASE"),
-            user=os.getenv("PGUSER"),
-            port=os.getenv("PGPORT")
+            host=os.getenv("POSTGRES_HOST"),
+            password=os.getenv("POSTGRES_PASSWORD"),
+            database=os.getenv("POSTGRES_DATABASE"),
+            user=os.getenv("POSTGRES_USER"),
+            port=os.getenv("POSTGRES_PORT")
         )
         return conn
     except Exception as e:
@@ -48,7 +49,7 @@ def create_engine():
     """
     Create an SQLAlchemy engine to connect to the database.
     """
-    engine = create_engine_sqlalchemy(os.getenv("PGURL"))
+    engine = create_engine_sqlalchemy(os.getenv("DATABASE_URL"))
     return engine
 
 engine = create_engine()
