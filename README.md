@@ -1,10 +1,10 @@
-# GitSum (Work in Progress)
+# GitGood (Work in Progress)
 
-GitSum is a web application that integrates with GitHub OAuth to provide repository insights, commit analysis, and AI-powered chat about your codebase. This project is currently a work in progress.
+GitGood is a web application that integrates with GitHub OAuth to provide repository insights, commit analysis, and AI-powered chat about your codebase. This project is currently a work in progress.
 
 ## Overview
 
-GitSum allows users to authenticate with GitHub, import repositories, and interact with their codebase using AI. The backend is built with FastAPI and the frontend uses React with Vite.
+GitGood allows users to authenticate with GitHub, import repositories, and interact with their codebase using AI. The backend is built with FastAPI and the frontend uses React with Vite.
 
 ## Features
 
